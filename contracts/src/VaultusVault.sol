@@ -243,9 +243,8 @@ contract VaultusVault is Ownable, ReentrancyGuard {
 
     // ============= Internal View Functions =============
     function _fetchCurrentAPYs() internal view returns (uint256 neverlandAPY, uint256 townSquareAPY) {
-        // Mock: These will be actual APY reads from pool contracts
-        // For now, return placeholder values that will be overridden by mock pool contracts
-        neverlandAPY = 0;
+        // Get APY from both pools (in basis points)
+        neverlandAPY = poolNeverland.getAPY(address(asset));
         townSquareAPY = poolTownSquare.getAPY();
     }
 

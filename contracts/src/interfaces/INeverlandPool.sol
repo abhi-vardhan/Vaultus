@@ -91,4 +91,11 @@ interface INeverlandPool {
      * @return The current liquidity rate in rays (1e27)
      */
     function getCurrentLiquidityRate(address asset) external view returns (uint256);
+
+    /**
+     * @notice Get APY for an asset (in basis points)
+     * @param asset The address of the asset
+     * @return The APY in basis points (e.g., 500 = 5%)
+     */
+    function getAPY(address asset) external view returns (uint256);
 }
