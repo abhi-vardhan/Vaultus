@@ -106,10 +106,13 @@ function StatCard({
 function APYDisplay({
   neverlandAPY,
   townSquareAPY,
+  curvanceAPY,
 }: {
   neverlandAPY: number;
   townSquareAPY: number;
+  curvanceAPY: number;
 }) {
+  const bestAPY = Math.max(neverlandAPY, townSquareAPY, curvanceAPY);
   return (
     <div className="nb-card p-6">
       <div className="flex items-center gap-3 mb-6">
@@ -122,28 +125,61 @@ function APYDisplay({
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#6EE7B7]/20 to-transparent rounded-xl border-2 border-[#111]">
+      <div className="space-y-3">
+        <div
+          className={`flex items-center justify-between p-4 bg-gradient-to-r from-[#6EE7B7]/20 to-transparent rounded-xl border-2 ${neverlandAPY === bestAPY ? "border-[#10B981] ring-2 ring-[#10B981]/30" : "border-[#111]"}`}
+        >
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-[#6EE7B7] border-2 border-[#111] rounded-lg flex items-center justify-center">
               <span className="text-sm font-bold">N</span>
             </div>
-            <span className="font-semibold">Neverland Pool</span>
+            <span className="font-semibold">Neverland</span>
+            {neverlandAPY === bestAPY && (
+              <span className="text-xs bg-[#10B981] text-white px-2 py-0.5 rounded-full font-bold">
+                BEST
+              </span>
+            )}
           </div>
           <span className="text-2xl font-bold font-display text-[#10B981]">
             {neverlandAPY.toFixed(2)}%
           </span>
         </div>
 
-        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#60A5FA]/20 to-transparent rounded-xl border-2 border-[#111]">
+        <div
+          className={`flex items-center justify-between p-4 bg-gradient-to-r from-[#60A5FA]/20 to-transparent rounded-xl border-2 ${townSquareAPY === bestAPY ? "border-[#3B82F6] ring-2 ring-[#3B82F6]/30" : "border-[#111]"}`}
+        >
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-[#60A5FA] border-2 border-[#111] rounded-lg flex items-center justify-center">
               <span className="text-sm font-bold text-white">T</span>
             </div>
-            <span className="font-semibold">TownSquare Pool</span>
+            <span className="font-semibold">TownSquare</span>
+            {townSquareAPY === bestAPY && (
+              <span className="text-xs bg-[#3B82F6] text-white px-2 py-0.5 rounded-full font-bold">
+                BEST
+              </span>
+            )}
           </div>
           <span className="text-2xl font-bold font-display text-[#3B82F6]">
             {townSquareAPY.toFixed(2)}%
+          </span>
+        </div>
+
+        <div
+          className={`flex items-center justify-between p-4 bg-gradient-to-r from-[#F59E0B]/20 to-transparent rounded-xl border-2 ${curvanceAPY === bestAPY ? "border-[#F59E0B] ring-2 ring-[#F59E0B]/30" : "border-[#111]"}`}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#F59E0B] border-2 border-[#111] rounded-lg flex items-center justify-center">
+              <span className="text-sm font-bold text-white">C</span>
+            </div>
+            <span className="font-semibold">Curvance</span>
+            {curvanceAPY === bestAPY && (
+              <span className="text-xs bg-[#F59E0B] text-white px-2 py-0.5 rounded-full font-bold">
+                BEST
+              </span>
+            )}
+          </div>
+          <span className="text-2xl font-bold font-display text-[#D97706]">
+            {curvanceAPY.toFixed(2)}%
           </span>
         </div>
       </div>
@@ -155,13 +191,17 @@ function APYDisplay({
 function AllocationDisplay({
   neverlandAlloc,
   townSquareAlloc,
+  curvanceAlloc,
   neverlandUSDC,
   townSquareUSDC,
+  curvanceUSDC,
 }: {
   neverlandAlloc: number;
   townSquareAlloc: number;
+  curvanceAlloc: number;
   neverlandUSDC: string;
   townSquareUSDC: string;
+  curvanceUSDC: string;
 }) {
   return (
     <div className="nb-card p-6">
@@ -178,7 +218,7 @@ function AllocationDisplay({
       <div className="space-y-4">
         <div>
           <div className="flex justify-between mb-2">
-            <span className="font-medium">Neverland Pool</span>
+            <span className="font-medium">Neverland</span>
             <span className="font-bold font-mono">
               {neverlandAlloc.toFixed(1)}% (${neverlandUSDC})
             </span>
@@ -196,7 +236,7 @@ function AllocationDisplay({
 
         <div>
           <div className="flex justify-between mb-2">
-            <span className="font-medium">TownSquare Pool</span>
+            <span className="font-medium">TownSquare</span>
             <span className="font-bold font-mono">
               {townSquareAlloc.toFixed(1)}% (${townSquareUSDC})
             </span>
@@ -207,6 +247,24 @@ function AllocationDisplay({
               key={`ts-${townSquareAlloc}`}
               initial={{ width: 0 }}
               animate={{ width: `${townSquareAlloc}%` }}
+              transition={{ duration: 1, ease: "easeOut", delay: 0.1 }}
+            />
+          </div>
+        </div>
+
+        <div>
+          <div className="flex justify-between mb-2">
+            <span className="font-medium">Curvance</span>
+            <span className="font-bold font-mono">
+              {curvanceAlloc.toFixed(1)}% (${curvanceUSDC})
+            </span>
+          </div>
+          <div className="h-4 bg-gray-100 border-2 border-[#111] rounded-lg overflow-hidden">
+            <motion.div
+              className="h-full bg-[#F59E0B]"
+              key={`cv-${curvanceAlloc}`}
+              initial={{ width: 0 }}
+              animate={{ width: `${curvanceAlloc}%` }}
               transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
             />
           </div>
@@ -450,7 +508,7 @@ function HeroSection() {
           <div className="flex flex-wrap justify-center gap-3 mb-10">
             {[
               { label: "Auto-Rebalancing", icon: RefreshCw },
-              { label: "Dual Pool Strategy", icon: BarChart3 },
+              { label: "Triple Pool Strategy", icon: BarChart3 },
               { label: "Non-Custodial", icon: Shield },
             ].map(({ label, icon: Icon }) => (
               <div
@@ -486,7 +544,7 @@ function HeroSection() {
               <p className="text-2xl font-bold font-display text-[#A855F7]">
                 <BarChart3 className="w-5 h-5 mx-auto mb-1" />
               </p>
-              <p className="text-sm text-gray-500">Dual Pool</p>
+              <p className="text-sm text-gray-500">Triple Pool</p>
             </div>
           </div>
         </motion.div>
@@ -572,7 +630,7 @@ export default function Home() {
     functionName: "getCurrentAPYs",
     chainId: CHAIN_ID,
     query: { refetchInterval: 5000 },
-  }) as { data: [bigint, bigint] | undefined };
+  }) as { data: [bigint, bigint, bigint] | undefined };
 
   const { data: allocation } = useReadContract({
     address: ADDRESSES.AUTOMATION_VAULT as `0x${string}`,
@@ -580,7 +638,7 @@ export default function Home() {
     functionName: "getAllocation",
     chainId: CHAIN_ID,
     query: { refetchInterval: 5000 },
-  }) as { data: [bigint, bigint] | undefined };
+  }) as { data: [bigint, bigint, bigint] | undefined };
 
   const { data: userAllowance } = useReadContract({
     address: ADDRESSES.USDC as `0x${string}`,
@@ -784,9 +842,11 @@ export default function Home() {
   // APYs come as basis points (e.g., 500 = 5%)
   const neverlandAPY = apys ? Number(apys[0]) / 100 : 0;
   const townSquareAPY = apys ? Number(apys[1]) / 100 : 0;
+  const curvanceAPY = apys ? Number(apys[2]) / 100 : 0;
+  const bestAPY = Math.max(neverlandAPY, townSquareAPY, curvanceAPY);
   // Allocation values are raw USDC amounts (6 decimals)
   const totalAlloc = allocation
-    ? Number(allocation[0]) + Number(allocation[1])
+    ? Number(allocation[0]) + Number(allocation[1]) + Number(allocation[2])
     : 0;
   const neverlandAlloc =
     totalAlloc > 0 && allocation
@@ -796,6 +856,10 @@ export default function Home() {
     totalAlloc > 0 && allocation
       ? (Number(allocation[1]) / totalAlloc) * 100
       : 0;
+  const curvanceAlloc =
+    totalAlloc > 0 && allocation
+      ? (Number(allocation[2]) / totalAlloc) * 100
+      : 0;
 
   // User's balance in USDC for display
   const userBalanceFormatted = formatUSDC(userBalance);
@@ -804,6 +868,7 @@ export default function Home() {
   // Allocation display: also show raw USDC values
   const neverlandAllocUSDC = allocation ? formatUSDC(allocation[0]) : "0.00";
   const townSquareAllocUSDC = allocation ? formatUSDC(allocation[1]) : "0.00";
+  const curvanceAllocUSDC = allocation ? formatUSDC(allocation[2]) : "0.00";
 
   // Not connected - show hero
   if (!isConnected) {
@@ -862,17 +927,17 @@ export default function Home() {
               color="blue"
             />
             <StatCard
-              title="Neverland APY"
-              value={`${neverlandAPY.toFixed(2)}%`}
-              subtitle="Current rate"
+              title="Best APY"
+              value={`${bestAPY.toFixed(2)}%`}
+              subtitle="Highest yield available"
               icon={TrendingUp}
               color="purple"
             />
             <StatCard
-              title="TownSquare APY"
-              value={`${townSquareAPY.toFixed(2)}%`}
-              subtitle="Current rate"
-              icon={TrendingUp}
+              title="Active Pools"
+              value="3"
+              subtitle="Neverland · TownSquare · Curvance"
+              icon={BarChart3}
               color="pink"
             />
           </div>
@@ -884,12 +949,15 @@ export default function Home() {
               <APYDisplay
                 neverlandAPY={neverlandAPY}
                 townSquareAPY={townSquareAPY}
+                curvanceAPY={curvanceAPY}
               />
               <AllocationDisplay
                 neverlandAlloc={neverlandAlloc}
                 townSquareAlloc={townSquareAlloc}
+                curvanceAlloc={curvanceAlloc}
                 neverlandUSDC={neverlandAllocUSDC}
                 townSquareUSDC={townSquareAllocUSDC}
+                curvanceUSDC={curvanceAllocUSDC}
               />
             </div>
 

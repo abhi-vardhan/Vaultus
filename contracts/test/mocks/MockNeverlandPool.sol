@@ -7,44 +7,64 @@ import {INeverlandPool} from "../../src/interfaces/INeverlandPool.sol";
 /**
  * @title MockNeverlandPool
  * @notice Mock Neverland Pool with auto-oscillating APY for demo
- * @dev APY alternates every 10 seconds between highApy and lowApy
+ * @dev 3-phase cycle: Phase 0 = hot, Phase 1 = mid, Phase 2 = low
  */
 contract MockNeverlandPool is INeverlandPool {
     using SafeERC20 for IERC20;
 
     IERC20 public asset;
     uint256 public highApy;  // APY when this pool is "hot" (basis points)
+    uint256 public midApy;   // APY when this pool is "mid" (basis points)
     uint256 public lowApy;   // APY when this pool is "cold" (basis points)
     uint256 public oscillateInterval; // seconds per phase
     uint256 public deployedAt;
 
     mapping(address => uint256) public balances;
     uint256 public totalSupplied;
+    bool public manualOverride;
 
     event MockSupply(address indexed user, address indexed asset, uint256 amount);
     event MockWithdraw(address indexed user, address indexed asset, uint256 amount);
 
-    constructor(address _asset, uint256 _highApy, uint256 _lowApy, uint256 _interval) {
+    constructor(address _asset, uint256 _highApy, uint256 _midApy, uint256 _lowApy, uint256 _interval) {
         asset = IERC20(_asset);
         highApy = _highApy;
+        midApy = _midApy;
         lowApy = _lowApy;
         oscillateInterval = _interval;
         deployedAt = block.timestamp;
     }
 
-    /// @notice Override APY for testing
+    /// @notice Override APY for testing (disables wobble)
     function setAPY(uint256 _newApy) external {
         highApy = _newApy;
+        midApy = _newApy;
         lowApy = _newApy;
+        manualOverride = true;
     }
 
     /**
-     * @notice Get current APY — oscillates automatically based on time
-     * @return Current APY in basis points
+     * @notice Get current APY — 3-phase oscillation
+     * @dev Neverland is hot in phase 0
      */
     function _currentApy() internal view returns (uint256) {
-        uint256 phase = ((block.timestamp - deployedAt) / oscillateInterval) % 2;
-        return phase == 0 ? highApy : lowApy;
+        uint256 phase = ((block.timestamp - deployedAt) / oscillateInterval) % 3;
+        uint256 base;
+        if (phase == 0) base = highApy;       // Neverland is hot
+        else if (phase == 1) base = midApy;   // TownSquare is hot, Neverland mid
+        else base = lowApy;                   // Curvance is hot, Neverland low
+
+        // Skip wobble if APY was manually set for testing
+        if (manualOverride) return base;
+
+        // Add pseudo-random wobble so APYs look varied
+        uint256 seed = uint256(keccak256(abi.encodePacked(block.timestamp / 3, address(this))));
+        uint256 wobble = seed % 150; // 0-149 basis points variation
+        if ((seed / 150) % 2 == 0) {
+            return base + wobble;
+        } else {
+            return base > wobble ? base - wobble : base;
+        }
     }
 
     function getAPY() external view returns (uint256) {

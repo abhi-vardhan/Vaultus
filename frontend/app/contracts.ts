@@ -2,14 +2,15 @@
 
 export const ADDRESSES = {
   // VaultusVault deployed on Monad Testnet
-  AUTOMATION_VAULT: "0x8b138e9f76669423be8664e1d4a6cd69427f4c3a",
+  AUTOMATION_VAULT: "0x1eFf6dd0282527BaddA502Cd939aF4C1eDa3139E",
 
   // MockUSDC on Monad Testnet
-  USDC: "0x82062a5d0b885b6f18e5221c1d6bb4229ce8b007",
+  USDC: "0xD88dc082175834D1E87071e0095E90911962fe8B",
 
   // Mock pool addresses on testnet
-  NEVERLAND_POOL: "0x826538ad3fa76f94c0e97da2d1c7322044cdd979",
-  TOWNSQUARE_USDC_POOL: "0x39a7566c74d3391e3b1cdbecf18bb65c0c01977a",
+  NEVERLAND_POOL: "0xC985De94009DE018E1B3C7f710359aA695D5a2d7",
+  TOWNSQUARE_USDC_POOL: "0x7a529A0dAf6C1329Fc8bF53dD0b30B794c1855b3",
+  CURVANCE_POOL: "0xB3473b7B58824Aa568D2deFB591325F24500bf56",
 } as const;
 
 // VaultusVault Contract ABI
@@ -20,6 +21,7 @@ export const AUTOMATION_VAULT_ABI = [
       { name: "_asset", type: "address" },
       { name: "_poolNeverland", type: "address" },
       { name: "_poolTownSquare", type: "address" },
+      { name: "_poolCurvance", type: "address" },
       { name: "_rebalanceThreshold", type: "uint256" },
       { name: "_minRebalanceInterval", type: "uint256" },
     ],
@@ -73,6 +75,7 @@ export const AUTOMATION_VAULT_ABI = [
     outputs: [
       { name: "neverlandAPY", type: "uint256" },
       { name: "townSquareAPY", type: "uint256" },
+      { name: "curvanceAPY", type: "uint256" },
     ],
     stateMutability: "view",
   },
@@ -83,6 +86,7 @@ export const AUTOMATION_VAULT_ABI = [
     outputs: [
       { name: "neverland", type: "uint256" },
       { name: "townSquare", type: "uint256" },
+      { name: "curvance", type: "uint256" },
     ],
     stateMutability: "view",
   },
@@ -187,6 +191,7 @@ export const AUTOMATION_VAULT_ABI = [
     inputs: [
       { name: "apyNeverland", type: "uint256" },
       { name: "apyTownSquare", type: "uint256" },
+      { name: "apyCurvance", type: "uint256" },
       { name: "timestamp", type: "uint256" },
     ],
   },

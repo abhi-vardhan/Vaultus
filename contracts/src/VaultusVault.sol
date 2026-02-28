@@ -6,6 +6,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {INeverlandPool} from "./interfaces/INeverlandPool.sol";
 import {ITownSquarePool} from "./interfaces/ITownSquarePool.sol";
+import {ICurvancePool} from "./interfaces/ICurvancePool.sol";
 
 contract VaultusVault is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -17,12 +18,14 @@ contract VaultusVault is Ownable, ReentrancyGuard {
     IERC20 public asset;
     INeverlandPool public poolNeverland;
     ITownSquarePool public poolTownSquare;
+    ICurvancePool public poolCurvance;
 
     uint256 public totalShares;
     mapping(address => uint256) public userShares;
 
     uint256 public allocationNeverland;
     uint256 public allocationTownSquare;
+    uint256 public allocationCurvance;
 
     uint256 public rebalanceThreshold; // in basis points (e.g., 100 = 1%)
     uint256 public minRebalanceInterval; // in seconds
@@ -33,9 +36,9 @@ contract VaultusVault is Ownable, ReentrancyGuard {
     // ============= Events =============
     event Deposit(address indexed user, uint256 amount, uint256 shares);
     event Withdraw(address indexed user, uint256 amount, uint256 shares);
-    event Rebalanced(uint256 apyNeverland, uint256 apyTownSquare, uint256 timestamp);
+    event Rebalanced(uint256 apyNeverland, uint256 apyTownSquare, uint256 apyCurvance, uint256 timestamp);
     event AllocationUpdated(address indexed pool, uint256 newAllocation);
-    event EmergencyWithdraw(uint256 amountNeverland, uint256 amountTownSquare);
+    event EmergencyWithdraw(uint256 amountNeverland, uint256 amountTownSquare, uint256 amountCurvance);
     event Paused(bool state);
 
     // ============= Errors =============
@@ -43,7 +46,6 @@ contract VaultusVault is Ownable, ReentrancyGuard {
     error VaultusVault__ZeroAmount();
     error VaultusVault__InsufficientBalance();
     error VaultusVault__Paused();
-    error VaultusVault__RebalanceTooSoon();
     error VaultusVault__NoFundsToRebalance();
     error VaultusVault__ThresholdNotMet();
 
@@ -52,16 +54,18 @@ contract VaultusVault is Ownable, ReentrancyGuard {
         address _asset,
         address _poolNeverland,
         address _poolTownSquare,
+        address _poolCurvance,
         uint256 _rebalanceThreshold,
         uint256 _minRebalanceInterval
     ) Ownable(msg.sender) {
-        if (_asset == address(0) || _poolNeverland == address(0) || _poolTownSquare == address(0)) {
+        if (_asset == address(0) || _poolNeverland == address(0) || _poolTownSquare == address(0) || _poolCurvance == address(0)) {
             revert VaultusVault__ZeroAddress();
         }
 
         asset = IERC20(_asset);
         poolNeverland = INeverlandPool(_poolNeverland);
         poolTownSquare = ITownSquarePool(_poolTownSquare);
+        poolCurvance = ICurvancePool(_poolCurvance);
 
         rebalanceThreshold = _rebalanceThreshold;
         minRebalanceInterval = _minRebalanceInterval;
@@ -70,6 +74,7 @@ contract VaultusVault is Ownable, ReentrancyGuard {
         // Approve pools to spend USDC
         asset.forceApprove(_poolNeverland, type(uint256).max);
         asset.forceApprove(_poolTownSquare, type(uint256).max);
+        asset.forceApprove(_poolCurvance, type(uint256).max);
     }
 
     // ============= Deposit/Withdraw =============
@@ -85,15 +90,17 @@ contract VaultusVault is Ownable, ReentrancyGuard {
         if (totalShares == 0) {
             sharesToMint = amount * SHARE_PRECISION;
         } else {
-            sharesToMint = (amount * totalShares) / getTotalAssets();
+            // Subtract `amount` because it's already in the contract balance
+            uint256 totalAssetsBefore = getTotalAssets() - amount;
+            sharesToMint = (amount * totalShares) / totalAssetsBefore;
         }
 
         // Update state
         userShares[msg.sender] += sharesToMint;
         totalShares += sharesToMint;
 
-        // Deploy to higher APY pool
-        _deployToHigherApyPool(amount);
+        // Deploy to highest APY pool
+        _deployToHighestApyPool(amount);
 
         // Check and rebalance if needed
         _checkAndRebalanceIfNeeded();
@@ -125,81 +132,96 @@ contract VaultusVault is Ownable, ReentrancyGuard {
 
     // ============= Rebalancing =============
     function rebalance() external nonReentrant {
-        (uint256 apyNeverland, uint256 apyTownSquare) = _fetchCurrentAPYs();
+        (uint256 apyN, uint256 apyT, uint256 apyC) = _fetchCurrentAPYs();
 
-        uint256 diff = apyNeverland > apyTownSquare
-            ? apyNeverland - apyTownSquare
-            : apyTownSquare - apyNeverland;
+        uint256 highest = apyN;
+        if (apyT > highest) highest = apyT;
+        if (apyC > highest) highest = apyC;
 
-        if (diff < rebalanceThreshold) {
+        uint256 lowest = apyN;
+        if (apyT < lowest) lowest = apyT;
+        if (apyC < lowest) lowest = apyC;
+
+        if (highest - lowest < rebalanceThreshold) {
             revert VaultusVault__ThresholdNotMet();
         }
 
-        _executeRebalance(apyNeverland, apyTownSquare);
+        _executeRebalance(apyN, apyT, apyC);
 
-        emit Rebalanced(apyNeverland, apyTownSquare, block.timestamp);
+        emit Rebalanced(apyN, apyT, apyC, block.timestamp);
     }
 
     function _checkAndRebalanceIfNeeded() internal {
-        (uint256 apyNeverland, uint256 apyTownSquare) = _fetchCurrentAPYs();
+        (uint256 apyN, uint256 apyT, uint256 apyC) = _fetchCurrentAPYs();
 
-        uint256 diff = apyNeverland > apyTownSquare
-            ? apyNeverland - apyTownSquare
-            : apyTownSquare - apyNeverland;
+        uint256 highest = apyN;
+        if (apyT > highest) highest = apyT;
+        if (apyC > highest) highest = apyC;
 
-        if (diff >= rebalanceThreshold) {
-            _executeRebalance(apyNeverland, apyTownSquare);
+        uint256 lowest = apyN;
+        if (apyT < lowest) lowest = apyT;
+        if (apyC < lowest) lowest = apyC;
+
+        if (highest - lowest >= rebalanceThreshold) {
+            _executeRebalance(apyN, apyT, apyC);
         }
     }
 
-    function _deployToHigherApyPool(uint256 amount) internal {
-        (uint256 apyNeverland, uint256 apyTownSquare) = _fetchCurrentAPYs();
+    function _deployToHighestApyPool(uint256 amount) internal {
+        (uint256 apyN, uint256 apyT, uint256 apyC) = _fetchCurrentAPYs();
 
-        if (apyNeverland >= apyTownSquare) {
-            // Deploy to Neverland
+        if (apyN >= apyT && apyN >= apyC) {
             poolNeverland.supply(address(asset), amount, address(this), 0);
             allocationNeverland += amount;
             emit AllocationUpdated(address(poolNeverland), allocationNeverland);
-        } else {
-            // Deploy to TownSquare
+        } else if (apyT >= apyN && apyT >= apyC) {
             poolTownSquare.deposit(amount);
             allocationTownSquare += amount;
             emit AllocationUpdated(address(poolTownSquare), allocationTownSquare);
+        } else {
+            poolCurvance.deposit(amount);
+            allocationCurvance += amount;
+            emit AllocationUpdated(address(poolCurvance), allocationCurvance);
         }
     }
 
-    function _executeRebalance(uint256 apyNeverland, uint256 apyTownSquare) internal {
-        if (allocationNeverland == 0 && allocationTownSquare == 0) {
+    function _executeRebalance(uint256 apyN, uint256 apyT, uint256 apyC) internal {
+        if (allocationNeverland == 0 && allocationTownSquare == 0 && allocationCurvance == 0) {
             revert VaultusVault__NoFundsToRebalance();
         }
 
-        if (apyNeverland > apyTownSquare) {
-            // Move all to Neverland
-            if (allocationTownSquare > 0) {
-                poolTownSquare.withdraw(allocationTownSquare);
-                allocationTownSquare = 0;
-                emit AllocationUpdated(address(poolTownSquare), 0);
-            }
+        // Withdraw everything from all pools
+        if (allocationNeverland > 0) {
+            poolNeverland.withdraw(address(asset), allocationNeverland, address(this));
+            emit AllocationUpdated(address(poolNeverland), 0);
+            allocationNeverland = 0;
+        }
+        if (allocationTownSquare > 0) {
+            poolTownSquare.withdraw(allocationTownSquare);
+            emit AllocationUpdated(address(poolTownSquare), 0);
+            allocationTownSquare = 0;
+        }
+        if (allocationCurvance > 0) {
+            poolCurvance.withdraw(allocationCurvance);
+            emit AllocationUpdated(address(poolCurvance), 0);
+            allocationCurvance = 0;
+        }
 
-            uint256 balance = asset.balanceOf(address(this));
-            if (balance > 0) {
+        // Deploy all to highest APY pool
+        uint256 balance = asset.balanceOf(address(this));
+        if (balance > 0) {
+            if (apyN >= apyT && apyN >= apyC) {
                 poolNeverland.supply(address(asset), balance, address(this), 0);
-                allocationNeverland += balance;
-                emit AllocationUpdated(address(poolNeverland), allocationNeverland);
-            }
-        } else {
-            // Move all to TownSquare
-            if (allocationNeverland > 0) {
-                poolNeverland.withdraw(address(asset), allocationNeverland, address(this));
-                allocationNeverland = 0;
-                emit AllocationUpdated(address(poolNeverland), 0);
-            }
-
-            uint256 balance = asset.balanceOf(address(this));
-            if (balance > 0) {
+                allocationNeverland = balance;
+                emit AllocationUpdated(address(poolNeverland), balance);
+            } else if (apyT >= apyN && apyT >= apyC) {
                 poolTownSquare.deposit(balance);
-                allocationTownSquare += balance;
-                emit AllocationUpdated(address(poolTownSquare), allocationTownSquare);
+                allocationTownSquare = balance;
+                emit AllocationUpdated(address(poolTownSquare), balance);
+            } else {
+                poolCurvance.deposit(balance);
+                allocationCurvance = balance;
+                emit AllocationUpdated(address(poolCurvance), balance);
             }
         }
 
@@ -208,14 +230,10 @@ contract VaultusVault is Ownable, ReentrancyGuard {
 
     function _withdrawFromPools(uint256 amount) internal {
         uint256 balance = asset.balanceOf(address(this));
-
-        if (balance >= amount) {
-            return; // Already have enough in contract
-        }
+        if (balance >= amount) return;
 
         uint256 needed = amount - balance;
 
-        // First try Neverland
         if (allocationNeverland > 0 && needed > 0) {
             uint256 toWithdraw = needed > allocationNeverland ? allocationNeverland : needed;
             poolNeverland.withdraw(address(asset), toWithdraw, address(this));
@@ -224,25 +242,32 @@ contract VaultusVault is Ownable, ReentrancyGuard {
             emit AllocationUpdated(address(poolNeverland), allocationNeverland);
         }
 
-        // Then TownSquare
         if (allocationTownSquare > 0 && needed > 0) {
             uint256 toWithdraw = needed > allocationTownSquare ? allocationTownSquare : needed;
             poolTownSquare.withdraw(toWithdraw);
             allocationTownSquare -= toWithdraw;
+            needed -= toWithdraw;
             emit AllocationUpdated(address(poolTownSquare), allocationTownSquare);
+        }
+
+        if (allocationCurvance > 0 && needed > 0) {
+            uint256 toWithdraw = needed > allocationCurvance ? allocationCurvance : needed;
+            poolCurvance.withdraw(toWithdraw);
+            allocationCurvance -= toWithdraw;
+            emit AllocationUpdated(address(poolCurvance), allocationCurvance);
         }
     }
 
     // ============= Internal View Functions =============
-    function _fetchCurrentAPYs() internal view returns (uint256 neverlandAPY, uint256 townSquareAPY) {
-        // Get APY from both pools (in basis points)
+    function _fetchCurrentAPYs() internal view returns (uint256 neverlandAPY, uint256 townSquareAPY, uint256 curvanceAPY) {
         neverlandAPY = poolNeverland.getAPY(address(asset));
         townSquareAPY = poolTownSquare.getAPY();
+        curvanceAPY = poolCurvance.getAPY();
     }
 
     // ============= Public View Functions =============
     function getTotalAssets() public view returns (uint256) {
-        return asset.balanceOf(address(this)) + allocationNeverland + allocationTownSquare;
+        return asset.balanceOf(address(this)) + allocationNeverland + allocationTownSquare + allocationCurvance;
     }
 
     function getUserBalance(address user) public view returns (uint256) {
@@ -250,17 +275,17 @@ contract VaultusVault is Ownable, ReentrancyGuard {
         return (userShares[user] * getTotalAssets()) / totalShares;
     }
 
-    function getCurrentAPYs() external view returns (uint256 neverlandAPY, uint256 townSquareAPY) {
+    function getCurrentAPYs() external view returns (uint256 neverlandAPY, uint256 townSquareAPY, uint256 curvanceAPY) {
         return _fetchCurrentAPYs();
     }
 
-    function getAllocation() external view returns (uint256 neverland, uint256 townSquare) {
-        return (allocationNeverland, allocationTownSquare);
+    function getAllocation() external view returns (uint256 neverland, uint256 townSquare, uint256 curvance) {
+        return (allocationNeverland, allocationTownSquare, allocationCurvance);
     }
 
     function getSharePrice() external view returns (uint256) {
         if (totalShares == 0) return 0;
-        return getTotalAssets() / totalShares;
+        return (getTotalAssets() * SHARE_PRECISION) / totalShares;
     }
 
     function sharesToAssets(uint256 shares) external view returns (uint256) {
@@ -277,22 +302,26 @@ contract VaultusVault is Ownable, ReentrancyGuard {
     function emergencyWithdrawAll() external onlyOwner nonReentrant {
         uint256 amountNeverland = 0;
         uint256 amountTownSquare = 0;
+        uint256 amountCurvance = 0;
 
         if (allocationNeverland > 0) {
             poolNeverland.withdraw(address(asset), allocationNeverland, address(this));
             amountNeverland = allocationNeverland;
             allocationNeverland = 0;
         }
-
         if (allocationTownSquare > 0) {
             poolTownSquare.withdraw(allocationTownSquare);
             amountTownSquare = allocationTownSquare;
             allocationTownSquare = 0;
         }
+        if (allocationCurvance > 0) {
+            poolCurvance.withdraw(allocationCurvance);
+            amountCurvance = allocationCurvance;
+            allocationCurvance = 0;
+        }
 
         paused = true;
-
-        emit EmergencyWithdraw(amountNeverland, amountTownSquare);
+        emit EmergencyWithdraw(amountNeverland, amountTownSquare, amountCurvance);
     }
 
     function pause() external onlyOwner {

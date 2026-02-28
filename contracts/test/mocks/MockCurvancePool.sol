@@ -2,14 +2,18 @@
 pragma solidity ^0.8.20;
 
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ITownSquarePool} from "../../src/interfaces/ITownSquarePool.sol";
+import {ICurvancePool} from "../../src/interfaces/ICurvancePool.sol";
 
 /**
- * @title MockTownSquarePool
- * @notice Mock TownSquare Pool with auto-oscillating APY for demo
- * @dev 3-phase cycle: Phase 1 = hot, Phase 2 = mid, Phase 0 = low
+ * @title MockCurvancePool
+ * @notice Mock Curvance Pool with auto-oscillating APY for demo
+ * @dev APY cycles through 3 phases (one per pool) so each pool
+ *      takes turns being the highest-yield option.
+ *      Phase 0: Neverland high  → Curvance mid  → TownSquare low
+ *      Phase 1: TownSquare high → Neverland mid → Curvance low
+ *      Phase 2: Curvance high   → TownSquare mid → Neverland low
  */
-contract MockTownSquarePool is ITownSquarePool {
+contract MockCurvancePool is ICurvancePool {
     using SafeERC20 for IERC20;
 
     IERC20 public asset;
@@ -44,80 +48,54 @@ contract MockTownSquarePool is ITownSquarePool {
     }
 
     /**
-     * @notice Get current APY — 3-phase oscillation
-     * @dev TownSquare is hot in phase 1
+     * @notice Get current APY — auto-oscillates in 3-phase cycle
+     * @dev Curvance is hot in phase 2
      */
     function _currentApy() internal view returns (uint256) {
         uint256 phase = ((block.timestamp - deployedAt) / oscillateInterval) % 3;
         uint256 base;
-        if (phase == 1) base = highApy;       // TownSquare is hot
-        else if (phase == 2) base = midApy;   // Curvance is hot, TownSquare mid
-        else base = lowApy;                   // Neverland is hot, TownSquare low
+        if (phase == 2) base = highApy;       // Curvance is hot
+        else if (phase == 0) base = midApy;   // Neverland is hot, Curvance mid
+        else base = lowApy;                   // TownSquare is hot, Curvance low
 
         // Skip wobble if APY was manually set for testing
         if (manualOverride) return base;
 
         // Add pseudo-random wobble so APYs look varied
         uint256 seed = uint256(keccak256(abi.encodePacked(block.timestamp / 3, address(this))));
-        uint256 wobble = seed % 130; // 0-129 basis points variation
-        if ((seed / 130) % 2 == 0) {
+        uint256 wobble = seed % 170; // 0-169 basis points variation
+        if ((seed / 170) % 2 == 0) {
             return base + wobble;
         } else {
             return base > wobble ? base - wobble : base;
         }
     }
 
-    /**
-     * @notice Deposit assets into the mock pool
-     */
     function deposit(uint256 amount) external override {
         require(amount > 0, "Amount must be > 0");
-
-        // Transfer USDC from caller to this contract
         asset.safeTransferFrom(msg.sender, address(this), amount);
-
-        // Track balance
         balances[msg.sender] += amount;
         totalLiquidity_ += amount;
-
         emit MockDeposit(msg.sender, amount);
     }
 
-    /**
-     * @notice Withdraw assets from the mock pool
-     */
     function withdraw(uint256 amount) external override {
         require(amount > 0, "Amount must be > 0");
         require(balances[msg.sender] >= amount, "Insufficient balance");
-
-        // Update balance
         balances[msg.sender] -= amount;
         totalLiquidity_ -= amount;
-
-        // Transfer USDC back to user
         asset.safeTransfer(msg.sender, amount);
-
         emit MockWithdraw(msg.sender, amount);
     }
 
-    /**
-     * @notice Get the current APY of the pool — auto-oscillates
-     * @return The APY in basis points
-     */
     function getAPY() external view override returns (uint256) {
         return _currentApy();
     }
 
-    /**
-     * @notice Get the balance of a user in the pool
-     */
     function balanceOf(address user) external view override returns (uint256) {
         return balances[user];
     }
 
-    /**
-     * @notice Get the total liquidity in the pool
-     */
     function totalLiquidity() external view override returns (uint256) {
         return totalLiquidity_;
     }
