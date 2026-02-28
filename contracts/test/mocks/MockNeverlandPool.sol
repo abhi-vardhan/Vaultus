@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {INeverlandPool} from "../interfaces/INeverlandPool.sol";
+import {INeverlandPool} from "../../src/interfaces/INeverlandPool.sol";
 
 /**
  * @title MockNeverlandPool
