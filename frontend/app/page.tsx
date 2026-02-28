@@ -478,7 +478,7 @@ function RebalanceCard({
 // Hero Section for non-connected state
 function HeroSection() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 pt-28">
       <div className="max-w-4xl mx-auto text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -508,7 +508,7 @@ function HeroSection() {
           <div className="flex flex-wrap justify-center gap-3 mb-10">
             {[
               { label: "Auto-Rebalancing", icon: RefreshCw },
-              { label: "Triple Pool Strategy", icon: BarChart3 },
+              { label: "Multi-Pool Strategy", icon: BarChart3 },
               { label: "Non-Custodial", icon: Shield },
             ].map(({ label, icon: Icon }) => (
               <div
@@ -524,28 +524,6 @@ function HeroSection() {
           {/* Connect Button */}
           <div className="inline-block">
             <ConnectButton />
-          </div>
-
-          {/* Protocol Info */}
-          <div className="grid grid-cols-3 gap-4 mt-12 max-w-xl mx-auto">
-            <div className="nb-card p-4 text-center">
-              <p className="text-2xl font-bold font-display text-[#10B981]">
-                <Shield className="w-5 h-5 mx-auto mb-1" />
-              </p>
-              <p className="text-sm text-gray-500">Non-Custodial</p>
-            </div>
-            <div className="nb-card p-4 text-center">
-              <p className="text-2xl font-bold font-display">
-                <Zap className="w-5 h-5 mx-auto mb-1" />
-              </p>
-              <p className="text-sm text-gray-500">Auto-Optimize</p>
-            </div>
-            <div className="nb-card p-4 text-center">
-              <p className="text-2xl font-bold font-display text-[#A855F7]">
-                <BarChart3 className="w-5 h-5 mx-auto mb-1" />
-              </p>
-              <p className="text-sm text-gray-500">Triple Pool</p>
-            </div>
           </div>
         </motion.div>
       </div>
