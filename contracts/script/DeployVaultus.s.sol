@@ -20,11 +20,14 @@ import {MockTownSquarePool} from "../test/mocks/MockTownSquarePool.sol";
 contract DeployVaultus is Script {
     // ============= Configuration =============
     uint256 constant REBALANCE_THRESHOLD = 100; // 1% in basis points
-    uint256 constant MIN_REBALANCE_INTERVAL = 3600; // 1 hour
+    uint256 constant MIN_REBALANCE_INTERVAL = 0; // No cooldown
 
-    // Initial APYs for mock pools (basis points)
-    uint256 constant NEVERLAND_INITIAL_APY = 500;   // 5%
-    uint256 constant TOWNSQUARE_INITIAL_APY = 800;  // 8%
+    // APY oscillation config (basis points)
+    uint256 constant NEVERLAND_HIGH_APY = 1200;    // 12% when hot
+    uint256 constant NEVERLAND_LOW_APY = 300;      // 3% when cold
+    uint256 constant TOWNSQUARE_HIGH_APY = 1100;   // 11% when hot
+    uint256 constant TOWNSQUARE_LOW_APY = 400;     // 4% when cold
+    uint256 constant OSCILLATE_INTERVAL = 10;      // Swap every 10 seconds
 
     function run() external {
         vm.startBroadcast();
@@ -33,12 +36,16 @@ contract DeployVaultus is Script {
         MockUSDC usdc = new MockUSDC();
         console2.log("MockUSDC deployed:", address(usdc));
 
-        // 2. Deploy Mock Neverland Pool (Aave v3 fork)
-        MockNeverlandPool neverland = new MockNeverlandPool(address(usdc), NEVERLAND_INITIAL_APY);
+        // 2. Deploy Mock Neverland Pool (auto-oscillating APY)
+        MockNeverlandPool neverland = new MockNeverlandPool(
+            address(usdc), NEVERLAND_HIGH_APY, NEVERLAND_LOW_APY, OSCILLATE_INTERVAL
+        );
         console2.log("MockNeverlandPool deployed:", address(neverland));
 
-        // 3. Deploy Mock TownSquare Pool
-        MockTownSquarePool townSquare = new MockTownSquarePool(address(usdc), TOWNSQUARE_INITIAL_APY);
+        // 3. Deploy Mock TownSquare Pool (auto-oscillating APY, opposite phase)
+        MockTownSquarePool townSquare = new MockTownSquarePool(
+            address(usdc), TOWNSQUARE_HIGH_APY, TOWNSQUARE_LOW_APY, OSCILLATE_INTERVAL
+        );
         console2.log("MockTownSquarePool deployed:", address(townSquare));
 
         // 4. Deploy VaultusVault

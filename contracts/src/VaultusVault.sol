@@ -125,10 +125,6 @@ contract VaultusVault is Ownable, ReentrancyGuard {
 
     // ============= Rebalancing =============
     function rebalance() external nonReentrant {
-        if (block.timestamp < lastRebalance + minRebalanceInterval) {
-            revert VaultusVault__RebalanceTooSoon();
-        }
-
         (uint256 apyNeverland, uint256 apyTownSquare) = _fetchCurrentAPYs();
 
         uint256 diff = apyNeverland > apyTownSquare
@@ -145,10 +141,6 @@ contract VaultusVault is Ownable, ReentrancyGuard {
     }
 
     function _checkAndRebalanceIfNeeded() internal {
-        if (block.timestamp < lastRebalance + minRebalanceInterval) {
-            return;
-        }
-
         (uint256 apyNeverland, uint256 apyTownSquare) = _fetchCurrentAPYs();
 
         uint256 diff = apyNeverland > apyTownSquare

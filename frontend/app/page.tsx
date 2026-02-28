@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   useAccount,
   useReadContract,
@@ -8,20 +8,20 @@ import {
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Vault, 
-  TrendingUp, 
-  ArrowDownToLine, 
-  ArrowUpFromLine, 
-  RefreshCw, 
+import { useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import {
+  Vault,
+  TrendingUp,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  RefreshCw,
   Wallet,
   Zap,
   Shield,
   BarChart3,
-  ChevronRight,
   ExternalLink,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ADDRESSES, AUTOMATION_VAULT_ABI, ERC20_ABI } from "./contracts";
@@ -38,19 +38,16 @@ function Header() {
             <div className="w-12 h-12 bg-[#6EE7B7] border-3 border-[#111] rounded-xl flex items-center justify-center shadow-[4px_4px_0_0_rgba(0,0,0,0.9)]">
               <Vault className="w-6 h-6 text-[#111]" />
             </div>
-            <span className="text-2xl font-bold font-display tracking-tight">Vaultus</span>
+            <span className="text-2xl font-bold font-display tracking-tight">
+              Vaultus
+            </span>
           </div>
 
           {/* Nav */}
           <nav className="hidden md:flex items-center gap-2">
-            {['Dashboard', 'Strategies', 'Analytics', 'Docs'].map((item, i) => (
-              <button 
-                key={item}
-                className={`px-4 py-2 font-medium font-display rounded-lg border-2 border-transparent hover:border-[#111] hover:bg-white transition-all ${i === 0 ? 'bg-[#6EE7B7] border-[#111]' : ''}`}
-              >
-                {item}
-              </button>
-            ))}
+            <button className="px-4 py-2 font-medium font-display rounded-lg border-2 bg-[#6EE7B7] border-[#111] transition-all">
+              Dashboard
+            </button>
           </nav>
 
           {/* Connect */}
@@ -62,37 +59,41 @@ function Header() {
 }
 
 // Stats Card
-function StatCard({ 
-  title, 
-  value, 
-  subtitle, 
-  icon: Icon, 
-  color = 'accent' 
-}: { 
-  title: string; 
-  value: string; 
-  subtitle?: string; 
+function StatCard({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  color = "accent",
+}: {
+  title: string;
+  value: string;
+  subtitle?: string;
   icon: any;
-  color?: 'accent' | 'blue' | 'purple' | 'pink';
+  color?: "accent" | "blue" | "purple" | "pink";
 }) {
   const bgColors = {
-    accent: 'bg-[#6EE7B7]',
-    blue: 'bg-[#60A5FA]',
-    purple: 'bg-[#A855F7]',
-    pink: 'bg-[#EC4899]'
+    accent: "bg-[#6EE7B7]",
+    blue: "bg-[#60A5FA]",
+    purple: "bg-[#A855F7]",
+    pink: "bg-[#EC4899]",
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="nb-card p-6"
       whileHover={{ y: -4 }}
       transition={{ type: "spring", stiffness: 300 }}
     >
       <div className="flex items-start justify-between mb-4">
-        <div className={`w-12 h-12 ${bgColors[color]} border-3 border-[#111] rounded-xl flex items-center justify-center`}>
+        <div
+          className={`w-12 h-12 ${bgColors[color]} border-3 border-[#111] rounded-xl flex items-center justify-center`}
+        >
           <Icon className="w-6 h-6 text-[#111]" />
         </div>
-        <span className="text-xs font-mono bg-[#111] text-white px-2 py-1 rounded-md">LIVE</span>
+        <span className="text-xs font-mono bg-[#111] text-white px-2 py-1 rounded-md">
+          LIVE
+        </span>
       </div>
       <p className="text-sm text-gray-600 font-medium mb-1">{title}</p>
       <p className="text-3xl font-bold font-display tracking-tight">{value}</p>
@@ -102,7 +103,13 @@ function StatCard({
 }
 
 // APY Display
-function APYDisplay({ neverlandAPY, townSquareAPY }: { neverlandAPY: number; townSquareAPY: number }) {
+function APYDisplay({
+  neverlandAPY,
+  townSquareAPY,
+}: {
+  neverlandAPY: number;
+  townSquareAPY: number;
+}) {
   return (
     <div className="nb-card p-6">
       <div className="flex items-center gap-3 mb-6">
@@ -123,7 +130,9 @@ function APYDisplay({ neverlandAPY, townSquareAPY }: { neverlandAPY: number; tow
             </div>
             <span className="font-semibold">Neverland Pool</span>
           </div>
-          <span className="text-2xl font-bold font-display text-[#10B981]">{neverlandAPY.toFixed(2)}%</span>
+          <span className="text-2xl font-bold font-display text-[#10B981]">
+            {neverlandAPY.toFixed(2)}%
+          </span>
         </div>
 
         <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#60A5FA]/20 to-transparent rounded-xl border-2 border-[#111]">
@@ -133,7 +142,9 @@ function APYDisplay({ neverlandAPY, townSquareAPY }: { neverlandAPY: number; tow
             </div>
             <span className="font-semibold">TownSquare Pool</span>
           </div>
-          <span className="text-2xl font-bold font-display text-[#3B82F6]">{townSquareAPY.toFixed(2)}%</span>
+          <span className="text-2xl font-bold font-display text-[#3B82F6]">
+            {townSquareAPY.toFixed(2)}%
+          </span>
         </div>
       </div>
     </div>
@@ -141,7 +152,17 @@ function APYDisplay({ neverlandAPY, townSquareAPY }: { neverlandAPY: number; tow
 }
 
 // Allocation Display
-function AllocationDisplay({ neverlandAlloc, townSquareAlloc }: { neverlandAlloc: number; townSquareAlloc: number }) {
+function AllocationDisplay({
+  neverlandAlloc,
+  townSquareAlloc,
+  neverlandUSDC,
+  townSquareUSDC,
+}: {
+  neverlandAlloc: number;
+  townSquareAlloc: number;
+  neverlandUSDC: string;
+  townSquareUSDC: string;
+}) {
   return (
     <div className="nb-card p-6">
       <div className="flex items-center gap-3 mb-6">
@@ -158,11 +179,14 @@ function AllocationDisplay({ neverlandAlloc, townSquareAlloc }: { neverlandAlloc
         <div>
           <div className="flex justify-between mb-2">
             <span className="font-medium">Neverland Pool</span>
-            <span className="font-bold font-mono">{neverlandAlloc.toFixed(1)}%</span>
+            <span className="font-bold font-mono">
+              {neverlandAlloc.toFixed(1)}% (${neverlandUSDC})
+            </span>
           </div>
           <div className="h-4 bg-gray-100 border-2 border-[#111] rounded-lg overflow-hidden">
-            <motion.div 
+            <motion.div
               className="h-full bg-[#6EE7B7]"
+              key={`nev-${neverlandAlloc}`}
               initial={{ width: 0 }}
               animate={{ width: `${neverlandAlloc}%` }}
               transition={{ duration: 1, ease: "easeOut" }}
@@ -173,11 +197,14 @@ function AllocationDisplay({ neverlandAlloc, townSquareAlloc }: { neverlandAlloc
         <div>
           <div className="flex justify-between mb-2">
             <span className="font-medium">TownSquare Pool</span>
-            <span className="font-bold font-mono">{townSquareAlloc.toFixed(1)}%</span>
+            <span className="font-bold font-mono">
+              {townSquareAlloc.toFixed(1)}% (${townSquareUSDC})
+            </span>
           </div>
           <div className="h-4 bg-gray-100 border-2 border-[#111] rounded-lg overflow-hidden">
-            <motion.div 
+            <motion.div
               className="h-full bg-[#60A5FA]"
+              key={`ts-${townSquareAlloc}`}
               initial={{ width: 0 }}
               animate={{ width: `${townSquareAlloc}%` }}
               transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
@@ -193,21 +220,19 @@ function AllocationDisplay({ neverlandAlloc, townSquareAlloc }: { neverlandAlloc
 function DepositCard({
   depositAmount,
   setDepositAmount,
-  allowanceApproved,
-  handleApprove,
   handleDeposit,
-  isApproveLoading,
-  isDepositLoading,
-  isConnected
+  isLoading,
+  isConnected,
+  needsApproval,
+  walletBalance,
 }: {
   depositAmount: string;
   setDepositAmount: (v: string) => void;
-  allowanceApproved: boolean;
-  handleApprove: () => void;
   handleDeposit: () => void;
-  isApproveLoading: boolean;
-  isDepositLoading: boolean;
+  isLoading: boolean;
   isConnected: boolean;
+  needsApproval: boolean;
+  walletBalance: string;
 }) {
   return (
     <div className="nb-card p-6">
@@ -223,7 +248,15 @@ function DepositCard({
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2">Amount</label>
+          <div className="flex justify-between mb-2">
+            <label className="block text-sm font-medium">Amount</label>
+            <button
+              onClick={() => setDepositAmount(walletBalance)}
+              className="text-xs font-bold text-[#10B981] hover:underline"
+            >
+              Wallet: ${walletBalance} USDC
+            </button>
+          </div>
           <div className="relative">
             <input
               type="number"
@@ -233,64 +266,55 @@ function DepositCard({
               className="nb-input w-full pr-16 text-lg"
               disabled={!isConnected}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">USDC</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">
+              USDC
+            </span>
           </div>
         </div>
 
-        {!allowanceApproved ? (
-          <button
-            onClick={handleApprove}
-            disabled={!depositAmount || isApproveLoading || !isConnected}
-            className="nb-btn w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isApproveLoading ? (
-              <RefreshCw className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                <Shield className="w-5 h-5" />
-                Approve USDC
-              </>
-            )}
-          </button>
-        ) : (
-          <button
-            onClick={handleDeposit}
-            disabled={!depositAmount || isDepositLoading || !isConnected}
-            className="nb-btn w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isDepositLoading ? (
-              <RefreshCw className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                <Zap className="w-5 h-5" />
-                Deposit Now
-              </>
-            )}
-          </button>
+        {needsApproval && depositAmount && (
+          <div className="bg-[#6EE7B7]/20 border-2 border-[#6EE7B7] rounded-xl p-3">
+            <p className="text-sm font-medium text-[#059669]">
+              Will auto-approve USDC before depositing
+            </p>
+          </div>
         )}
+
+        <button
+          onClick={handleDeposit}
+          disabled={!depositAmount || isLoading || !isConnected}
+          className="nb-btn w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <RefreshCw className="w-5 h-5 animate-spin" />
+          ) : (
+            <>
+              <Zap className="w-5 h-5" />
+              Deposit
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
 }
 
-// Withdraw Card
+// Withdraw Card — user enters USDC amount, we convert to shares
 function WithdrawCard({
-  withdrawShares,
-  setWithdrawShares,
+  withdrawAmount,
+  setWithdrawAmount,
   handleWithdraw,
   isWithdrawLoading,
-  userShares,
-  isConnected
+  userBalance,
+  isConnected,
 }: {
-  withdrawShares: string;
-  setWithdrawShares: (v: string) => void;
+  withdrawAmount: string;
+  setWithdrawAmount: (v: string) => void;
   handleWithdraw: () => void;
   isWithdrawLoading: boolean;
-  userShares: bigint | undefined;
+  userBalance: string;
   isConnected: boolean;
 }) {
-  const maxShares = userShares ? formatUnits(userShares, 18) : "0";
-
   return (
     <div className="nb-card p-6">
       <div className="flex items-center gap-3 mb-6">
@@ -299,37 +323,39 @@ function WithdrawCard({
         </div>
         <div>
           <h3 className="font-bold font-display text-lg">Withdraw</h3>
-          <p className="text-sm text-gray-500">Redeem your shares</p>
+          <p className="text-sm text-gray-500">Withdraw your USDC</p>
         </div>
       </div>
 
       <div className="space-y-4">
         <div>
           <div className="flex justify-between mb-2">
-            <label className="text-sm font-medium">Shares</label>
-            <button 
-              onClick={() => setWithdrawShares(maxShares)}
+            <label className="text-sm font-medium">Amount (USDC)</label>
+            <button
+              onClick={() => setWithdrawAmount(userBalance)}
               className="text-xs font-bold text-[#3B82F6] hover:underline"
             >
-              MAX: {parseFloat(maxShares).toFixed(4)}
+              MAX: ${userBalance} USDC
             </button>
           </div>
           <div className="relative">
             <input
               type="number"
-              value={withdrawShares}
-              onChange={(e) => setWithdrawShares(e.target.value)}
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(e.target.value)}
               placeholder="0.00"
               className="nb-input w-full pr-20 text-lg"
               disabled={!isConnected}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">SHARES</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">
+              USDC
+            </span>
           </div>
         </div>
 
         <button
           onClick={handleWithdraw}
-          disabled={!withdrawShares || isWithdrawLoading || !isConnected}
+          disabled={!withdrawAmount || isWithdrawLoading || !isConnected}
           className="nb-btn nb-btn-secondary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isWithdrawLoading ? (
@@ -350,22 +376,12 @@ function WithdrawCard({
 function RebalanceCard({
   handleRebalance,
   isRebalanceLoading,
-  canRebalance,
-  cooldownRemaining,
-  isConnected
+  isConnected,
 }: {
   handleRebalance: () => void;
   isRebalanceLoading: boolean;
-  canRebalance: boolean;
-  cooldownRemaining: number;
   isConnected: boolean;
 }) {
-  const formatCooldown = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}m ${secs}s`;
-  };
-
   return (
     <div className="nb-card p-6">
       <div className="flex items-center gap-3 mb-6">
@@ -379,20 +395,13 @@ function RebalanceCard({
       </div>
 
       <p className="text-sm text-gray-600 mb-4">
-        Automatically shift funds to the highest-yielding pool based on current APYs.
+        Automatically shift funds to the highest-yielding pool based on current
+        APYs. Pool rates oscillate in real-time.
       </p>
-
-      {!canRebalance && (
-        <div className="bg-[#F59E0B]/20 border-2 border-[#F59E0B] rounded-xl p-3 mb-4">
-          <p className="text-sm font-medium text-[#B45309]">
-            ⏱️ Cooldown: {formatCooldown(cooldownRemaining)}
-          </p>
-        </div>
-      )}
 
       <button
         onClick={handleRebalance}
-        disabled={!canRebalance || isRebalanceLoading || !isConnected}
+        disabled={isRebalanceLoading || !isConnected}
         className="nb-btn nb-btn-purple w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isRebalanceLoading ? (
@@ -433,17 +442,18 @@ function HeroSection() {
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Automated yield optimization vault. Deposit USDC, let our smart contracts find the best yields.
+            Automated yield optimization vault. Deposit USDC, let our smart
+            contracts find the best yields.
           </p>
 
           {/* Feature Pills */}
           <div className="flex flex-wrap justify-center gap-3 mb-10">
             {[
-              { label: 'Auto-Rebalancing', icon: RefreshCw },
-              { label: 'Dual Pool Strategy', icon: BarChart3 },
-              { label: 'Non-Custodial', icon: Shield },
+              { label: "Auto-Rebalancing", icon: RefreshCw },
+              { label: "Dual Pool Strategy", icon: BarChart3 },
+              { label: "Non-Custodial", icon: Shield },
             ].map(({ label, icon: Icon }) => (
-              <div 
+              <div
                 key={label}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-white border-3 border-[#111] rounded-full shadow-[4px_4px_0_0_rgba(0,0,0,0.9)]"
               >
@@ -458,19 +468,25 @@ function HeroSection() {
             <ConnectButton />
           </div>
 
-          {/* Stats Preview */}
+          {/* Protocol Info */}
           <div className="grid grid-cols-3 gap-4 mt-12 max-w-xl mx-auto">
             <div className="nb-card p-4 text-center">
-              <p className="text-2xl font-bold font-display text-[#10B981]">12.5%</p>
-              <p className="text-sm text-gray-500">Avg APY</p>
+              <p className="text-2xl font-bold font-display text-[#10B981]">
+                <Shield className="w-5 h-5 mx-auto mb-1" />
+              </p>
+              <p className="text-sm text-gray-500">Non-Custodial</p>
             </div>
             <div className="nb-card p-4 text-center">
-              <p className="text-2xl font-bold font-display">$2.4M</p>
-              <p className="text-sm text-gray-500">TVL</p>
+              <p className="text-2xl font-bold font-display">
+                <Zap className="w-5 h-5 mx-auto mb-1" />
+              </p>
+              <p className="text-sm text-gray-500">Auto-Optimize</p>
             </div>
             <div className="nb-card p-4 text-center">
-              <p className="text-2xl font-bold font-display text-[#A855F7]">847</p>
-              <p className="text-sm text-gray-500">Depositors</p>
+              <p className="text-2xl font-bold font-display text-[#A855F7]">
+                <BarChart3 className="w-5 h-5 mx-auto mb-1" />
+              </p>
+              <p className="text-sm text-gray-500">Dual Pool</p>
             </div>
           </div>
         </motion.div>
@@ -493,10 +509,10 @@ function Footer() {
           </div>
 
           <div className="flex items-center gap-6">
-            {['Docs', 'GitHub', 'Twitter'].map((link) => (
-              <a 
+            {["Docs", "GitHub", "Twitter"].map((link) => (
+              <a
                 key={link}
-                href="#" 
+                href="#"
                 className="text-sm font-medium text-gray-600 hover:text-[#111] flex items-center gap-1"
               >
                 {link}
@@ -506,7 +522,7 @@ function Footer() {
           </div>
 
           <p className="text-sm text-gray-500">
-            © 2025 Vaultus. Built on Monad.
+            © 2026 Vaultus. Built on Monad.
           </p>
         </div>
       </div>
@@ -517,48 +533,54 @@ function Footer() {
 // Main Page Component
 export default function Home() {
   const { address, isConnected } = useAccount();
+  const queryClient = useQueryClient();
   const [depositAmount, setDepositAmount] = useState("");
-  const [withdrawShares, setWithdrawShares] = useState("");
-  const [lastRebalanceTime, setLastRebalanceTime] = useState<number>(0);
-  const [allowanceApproved, setAllowanceApproved] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [depositStep, setDepositStep] = useState<
+    "idle" | "approving" | "depositing"
+  >("idle");
 
-  // Read vault data
+  // Invalidate all contract reads to force UI refresh
+  const invalidateAll = useCallback(() => {
+    queryClient.invalidateQueries();
+  }, [queryClient]);
+
+  // Monad Testnet Chain ID
+  const CHAIN_ID = 10143;
+
+  // Read vault data — always target Monad Testnet
   const { data: totalAssets } = useReadContract({
     address: ADDRESSES.AUTOMATION_VAULT as `0x${string}`,
     abi: AUTOMATION_VAULT_ABI,
     functionName: "getTotalAssets",
+    chainId: CHAIN_ID,
     query: { refetchInterval: 5000 },
-  });
+  }) as { data: bigint | undefined };
 
   const { data: userBalance } = useReadContract({
     address: ADDRESSES.AUTOMATION_VAULT as `0x${string}`,
     abi: AUTOMATION_VAULT_ABI,
     functionName: "getUserBalance",
     args: [address as `0x${string}`],
+    chainId: CHAIN_ID,
     query: { enabled: !!address, refetchInterval: 5000 },
-  });
-
-  const { data: userShares } = useReadContract({
-    address: ADDRESSES.AUTOMATION_VAULT as `0x${string}`,
-    abi: AUTOMATION_VAULT_ABI,
-    functionName: "userShares",
-    args: [address as `0x${string}`],
-    query: { enabled: !!address, refetchInterval: 5000 },
-  });
+  }) as { data: bigint | undefined };
 
   const { data: apys } = useReadContract({
     address: ADDRESSES.AUTOMATION_VAULT as `0x${string}`,
     abi: AUTOMATION_VAULT_ABI,
     functionName: "getCurrentAPYs",
+    chainId: CHAIN_ID,
     query: { refetchInterval: 5000 },
-  });
+  }) as { data: [bigint, bigint] | undefined };
 
   const { data: allocation } = useReadContract({
     address: ADDRESSES.AUTOMATION_VAULT as `0x${string}`,
     abi: AUTOMATION_VAULT_ABI,
     functionName: "getAllocation",
+    chainId: CHAIN_ID,
     query: { refetchInterval: 5000 },
-  });
+  }) as { data: [bigint, bigint] | undefined };
 
   const { data: userAllowance } = useReadContract({
     address: ADDRESSES.USDC as `0x${string}`,
@@ -568,121 +590,225 @@ export default function Home() {
       address as `0x${string}`,
       ADDRESSES.AUTOMATION_VAULT as `0x${string}`,
     ],
+    chainId: CHAIN_ID,
     query: { enabled: !!address, refetchInterval: 5000 },
-  });
+  }) as { data: bigint | undefined };
 
-  // Write contracts
-  const { writeContract: approve, data: approveTxHash } = useWriteContract();
-  const { writeContract: deposit, data: depositTxHash } = useWriteContract();
-  const { writeContract: withdraw, data: withdrawTxHash } = useWriteContract();
-  const { writeContract: rebalance, data: rebalanceTxHash } = useWriteContract();
+  // Read user's USDC wallet balance
+  const { data: usdcWalletBalance } = useReadContract({
+    address: ADDRESSES.USDC as `0x${string}`,
+    abi: ERC20_ABI,
+    functionName: "balanceOf",
+    args: [address as `0x${string}`],
+    chainId: CHAIN_ID,
+    query: { enabled: !!address, refetchInterval: 5000 },
+  }) as { data: bigint | undefined };
 
-  // Wait for transaction receipts
-  const { isLoading: isApproveLoading, isSuccess: isApproveSuccess } =
-    useWaitForTransactionReceipt({ hash: approveTxHash as `0x${string}` });
+  // Read shares-to-assets conversion for withdraw
+  const withdrawUsdcRaw = withdrawAmount
+    ? parseUnits(withdrawAmount, 6)
+    : BigInt(0);
+  const { data: withdrawSharesNeeded } = useReadContract({
+    address: ADDRESSES.AUTOMATION_VAULT as `0x${string}`,
+    abi: AUTOMATION_VAULT_ABI,
+    functionName: "assetsToShares",
+    args: [withdrawUsdcRaw],
+    chainId: CHAIN_ID,
+    query: {
+      enabled: !!withdrawAmount && withdrawUsdcRaw > BigInt(0),
+      refetchInterval: 5000,
+    },
+  }) as { data: bigint | undefined };
 
-  const { isLoading: isDepositLoading, isSuccess: isDepositSuccess } =
-    useWaitForTransactionReceipt({ hash: depositTxHash as `0x${string}` });
+  // Write contracts — extract isPending (wallet signing) + reset (clear old hash)
+  const {
+    writeContract: approve,
+    data: approveTxHash,
+    isPending: isApprovePending,
+    reset: resetApprove,
+  } = useWriteContract();
+  const {
+    writeContract: deposit,
+    data: depositTxHash,
+    isPending: isDepositPending,
+    reset: resetDeposit,
+  } = useWriteContract();
+  const {
+    writeContract: withdraw,
+    data: withdrawTxHash,
+    isPending: isWithdrawPending,
+    reset: resetWithdraw,
+  } = useWriteContract();
+  const {
+    writeContract: rebalance,
+    data: rebalanceTxHash,
+    isPending: isRebalancePending,
+    reset: resetRebalance,
+  } = useWriteContract();
 
-  const { isLoading: isWithdrawLoading, isSuccess: isWithdrawSuccess } =
-    useWaitForTransactionReceipt({ hash: withdrawTxHash as `0x${string}` });
+  // Wait for transaction receipts (isConfirming = waiting on-chain)
+  const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } =
+    useWaitForTransactionReceipt({ hash: approveTxHash, chainId: CHAIN_ID });
 
-  const { isLoading: isRebalanceLoading, isSuccess: isRebalanceSuccess } =
-    useWaitForTransactionReceipt({ hash: rebalanceTxHash as `0x${string}` });
+  const { isLoading: isDepositConfirming, isSuccess: isDepositSuccess } =
+    useWaitForTransactionReceipt({ hash: depositTxHash, chainId: CHAIN_ID });
 
-  // Toast notifications
+  const { isLoading: isWithdrawConfirming, isSuccess: isWithdrawSuccess } =
+    useWaitForTransactionReceipt({ hash: withdrawTxHash, chainId: CHAIN_ID });
+
+  const { isLoading: isRebalanceConfirming, isSuccess: isRebalanceSuccess } =
+    useWaitForTransactionReceipt({ hash: rebalanceTxHash, chainId: CHAIN_ID });
+
+  // Combined loading states: wallet signing OR on-chain confirmation
+  const isDepositFlowLoading =
+    isApprovePending ||
+    isApproveConfirming ||
+    isDepositPending ||
+    isDepositConfirming;
+  const isWithdrawLoading = isWithdrawPending || isWithdrawConfirming;
+  const isRebalanceLoading = isRebalancePending || isRebalanceConfirming;
+
+  // After approve succeeds, auto-trigger deposit
   useEffect(() => {
-    if (isApproveSuccess) toast.success("USDC approved successfully!");
-  }, [isApproveSuccess]);
+    if (isApproveSuccess && depositStep === "approving") {
+      toast.success("USDC approved! Now depositing...");
+      resetApprove();
+      invalidateAll();
+      setDepositStep("depositing");
+      if (depositAmount && address) {
+        const amount = parseUnits(depositAmount, 6);
+        deposit({
+          chainId: CHAIN_ID,
+          address: ADDRESSES.AUTOMATION_VAULT as `0x${string}`,
+          abi: AUTOMATION_VAULT_ABI,
+          functionName: "deposit",
+          args: [amount],
+        });
+      }
+    }
+  }, [isApproveSuccess, depositStep]);
 
   useEffect(() => {
     if (isDepositSuccess) {
       toast.success("Deposit successful!");
       setDepositAmount("");
-      setAllowanceApproved(false);
+      setDepositStep("idle");
+      resetDeposit();
+      invalidateAll();
     }
-  }, [isDepositSuccess]);
+  }, [isDepositSuccess, resetDeposit, invalidateAll]);
 
   useEffect(() => {
     if (isWithdrawSuccess) {
       toast.success("Withdrawal successful!");
-      setWithdrawShares("");
+      setWithdrawAmount("");
+      resetWithdraw();
+      invalidateAll();
     }
-  }, [isWithdrawSuccess]);
+  }, [isWithdrawSuccess, resetWithdraw, invalidateAll]);
 
   useEffect(() => {
-    if (isRebalanceSuccess) toast.success("Vault rebalanced successfully!");
-  }, [isRebalanceSuccess]);
-
-  // Update allowance status
-  useEffect(() => {
-    if (userAllowance && depositAmount) {
-      const needed = parseUnits(depositAmount || "0", 6);
-      setAllowanceApproved(userAllowance >= needed);
+    if (isRebalanceSuccess) {
+      toast.success("Vault rebalanced successfully!");
+      resetRebalance();
+      invalidateAll();
     }
-  }, [userAllowance, depositAmount]);
+  }, [isRebalanceSuccess, resetRebalance, invalidateAll]);
 
-  const handleApprove = () => {
-    if (!depositAmount || !address) return;
-    const amount = parseUnits(depositAmount, 6);
-    approve({
-      address: ADDRESSES.USDC as `0x${string}`,
-      abi: ERC20_ABI,
-      functionName: "approve",
-      args: [ADDRESSES.AUTOMATION_VAULT as `0x${string}`, amount],
-    });
-  };
+  // Check if approval is needed
+  const needsApproval = (() => {
+    if (!depositAmount || !userAllowance) return true;
+    try {
+      const needed = parseUnits(depositAmount, 6);
+      return userAllowance < needed;
+    } catch {
+      return true;
+    }
+  })();
 
+  // Single deposit handler — auto-approves if needed, then deposits
   const handleDeposit = () => {
     if (!depositAmount || !address) return;
     const amount = parseUnits(depositAmount, 6);
-    deposit({
-      address: ADDRESSES.AUTOMATION_VAULT as `0x${string}`,
-      abi: AUTOMATION_VAULT_ABI,
-      functionName: "deposit",
-      args: [amount],
-    });
+
+    if (needsApproval) {
+      // Step 1: Approve first, deposit will auto-trigger on success
+      setDepositStep("approving");
+      approve({
+        chainId: CHAIN_ID,
+        address: ADDRESSES.USDC as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: "approve",
+        args: [ADDRESSES.AUTOMATION_VAULT as `0x${string}`, amount],
+      });
+    } else {
+      // Already approved, deposit directly
+      setDepositStep("depositing");
+      deposit({
+        chainId: CHAIN_ID,
+        address: ADDRESSES.AUTOMATION_VAULT as `0x${string}`,
+        abi: AUTOMATION_VAULT_ABI,
+        functionName: "deposit",
+        args: [amount],
+      });
+    }
   };
 
   const handleWithdraw = () => {
-    if (!withdrawShares || !address) return;
-    const shares = parseUnits(withdrawShares, 18);
+    if (!withdrawAmount || !address || !withdrawSharesNeeded) return;
     withdraw({
+      chainId: CHAIN_ID,
       address: ADDRESSES.AUTOMATION_VAULT as `0x${string}`,
       abi: AUTOMATION_VAULT_ABI,
       functionName: "withdraw",
-      args: [shares],
+      args: [withdrawSharesNeeded],
     });
   };
 
   const handleRebalance = () => {
     if (!address) return;
     rebalance({
+      chainId: CHAIN_ID,
       address: ADDRESSES.AUTOMATION_VAULT as `0x${string}`,
       abi: AUTOMATION_VAULT_ABI,
       functionName: "rebalance",
     });
   };
 
-  // Calculate cooldown
-  const cooldownRemaining = Math.max(0, lastRebalanceTime + 3600 - Date.now() / 1000);
-  const canRebalance = cooldownRemaining <= 0;
-
   // Format display values
-  const formatValue = (value: bigint | undefined, decimals = 6) => {
+  const formatUSDC = (value: bigint | undefined) => {
     if (!value) return "0.00";
-    return parseFloat(formatUnits(value, decimals)).toFixed(2);
+    return parseFloat(formatUnits(value, 6)).toFixed(2);
   };
 
-  const neverlandAPY = apys ? Number(apys[0]) / 100 : 8.5;
-  const townSquareAPY = apys ? Number(apys[1]) / 100 : 6.2;
-  const neverlandAlloc = allocation ? (Number(allocation[0]) / 1e18) * 100 : 65;
-  const townSquareAlloc = allocation ? (Number(allocation[1]) / 1e18) * 100 : 35;
+  // APYs come as basis points (e.g., 500 = 5%)
+  const neverlandAPY = apys ? Number(apys[0]) / 100 : 0;
+  const townSquareAPY = apys ? Number(apys[1]) / 100 : 0;
+  // Allocation values are raw USDC amounts (6 decimals)
+  const totalAlloc = allocation
+    ? Number(allocation[0]) + Number(allocation[1])
+    : 0;
+  const neverlandAlloc =
+    totalAlloc > 0 && allocation
+      ? (Number(allocation[0]) / totalAlloc) * 100
+      : 0;
+  const townSquareAlloc =
+    totalAlloc > 0 && allocation
+      ? (Number(allocation[1]) / totalAlloc) * 100
+      : 0;
+
+  // User's balance in USDC for display
+  const userBalanceFormatted = formatUSDC(userBalance);
+  const walletUsdcFormatted = formatUSDC(usdcWalletBalance);
+
+  // Allocation display: also show raw USDC values
+  const neverlandAllocUSDC = allocation ? formatUSDC(allocation[0]) : "0.00";
+  const townSquareAllocUSDC = allocation ? formatUSDC(allocation[1]) : "0.00";
 
   // Not connected - show hero
   if (!isConnected) {
     return (
-      <main className="min-h-screen" style={{ background: '#F7F5F2' }}>
+      <main className="min-h-screen" style={{ background: "#F7F5F2" }}>
         <Header />
         <HeroSection />
         <Footer />
@@ -692,20 +818,22 @@ export default function Home() {
 
   // Connected - show dashboard
   return (
-    <main className="min-h-screen" style={{ background: '#F7F5F2' }}>
+    <main className="min-h-screen" style={{ background: "#F7F5F2" }}>
       <Header />
-      
+
       <div className="pt-28 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Welcome Banner */}
-          <motion.div 
+          <motion.div
             className="nb-card p-6 mb-8 bg-gradient-to-r from-[#6EE7B7]/20 via-[#60A5FA]/20 to-[#A855F7]/20"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold font-display mb-1">Welcome back!</h2>
+                <h2 className="text-2xl font-bold font-display mb-1">
+                  Welcome back!
+                </h2>
                 <p className="text-gray-600 font-mono text-sm">
                   {address?.slice(0, 6)}...{address?.slice(-4)}
                 </p>
@@ -721,29 +849,29 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatCard
               title="Total Value Locked"
-              value={`$${formatValue(totalAssets)}`}
+              value={`$${formatUSDC(totalAssets)}`}
               subtitle="Across all pools"
               icon={Vault}
               color="accent"
             />
             <StatCard
               title="Your Balance"
-              value={`$${formatValue(userBalance)}`}
+              value={`$${formatUSDC(userBalance)}`}
               subtitle="Current value"
               icon={Wallet}
               color="blue"
             />
             <StatCard
-              title="Your Shares"
-              value={formatValue(userShares, 18)}
-              subtitle="Vault tokens"
-              icon={BarChart3}
+              title="Neverland APY"
+              value={`${neverlandAPY.toFixed(2)}%`}
+              subtitle="Current rate"
+              icon={TrendingUp}
               color="purple"
             />
             <StatCard
-              title="Best APY"
-              value={`${Math.max(neverlandAPY, townSquareAPY).toFixed(2)}%`}
-              subtitle="Current optimal"
+              title="TownSquare APY"
+              value={`${townSquareAPY.toFixed(2)}%`}
+              subtitle="Current rate"
               icon={TrendingUp}
               color="pink"
             />
@@ -753,8 +881,16 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - APY & Allocation */}
             <div className="space-y-6">
-              <APYDisplay neverlandAPY={neverlandAPY} townSquareAPY={townSquareAPY} />
-              <AllocationDisplay neverlandAlloc={neverlandAlloc} townSquareAlloc={townSquareAlloc} />
+              <APYDisplay
+                neverlandAPY={neverlandAPY}
+                townSquareAPY={townSquareAPY}
+              />
+              <AllocationDisplay
+                neverlandAlloc={neverlandAlloc}
+                townSquareAlloc={townSquareAlloc}
+                neverlandUSDC={neverlandAllocUSDC}
+                townSquareUSDC={townSquareAllocUSDC}
+              />
             </div>
 
             {/* Middle & Right - Actions */}
@@ -762,27 +898,24 @@ export default function Home() {
               <DepositCard
                 depositAmount={depositAmount}
                 setDepositAmount={setDepositAmount}
-                allowanceApproved={allowanceApproved}
-                handleApprove={handleApprove}
                 handleDeposit={handleDeposit}
-                isApproveLoading={isApproveLoading}
-                isDepositLoading={isDepositLoading}
+                isLoading={isDepositFlowLoading}
                 isConnected={isConnected}
+                needsApproval={needsApproval}
+                walletBalance={walletUsdcFormatted}
               />
               <WithdrawCard
-                withdrawShares={withdrawShares}
-                setWithdrawShares={setWithdrawShares}
+                withdrawAmount={withdrawAmount}
+                setWithdrawAmount={setWithdrawAmount}
                 handleWithdraw={handleWithdraw}
                 isWithdrawLoading={isWithdrawLoading}
-                userShares={userShares}
+                userBalance={userBalanceFormatted}
                 isConnected={isConnected}
               />
               <div className="md:col-span-2">
                 <RebalanceCard
                   handleRebalance={handleRebalance}
                   isRebalanceLoading={isRebalanceLoading}
-                  canRebalance={canRebalance}
-                  cooldownRemaining={cooldownRemaining}
                   isConnected={isConnected}
                 />
               </div>

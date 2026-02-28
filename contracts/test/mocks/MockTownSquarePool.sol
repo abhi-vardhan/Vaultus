@@ -6,13 +6,18 @@ import {ITownSquarePool} from "../../src/interfaces/ITownSquarePool.sol";
 
 /**
  * @title MockTownSquarePool
- * @notice Mock implementation of TownSquare Pool for testing
+ * @notice Mock TownSquare Pool with auto-oscillating APY for demo
+ * @dev APY alternates every 10 seconds between highApy and lowApy
+ *      Oscillation is OPPOSITE to Neverland — when Neverland is high, TownSquare is low
  */
 contract MockTownSquarePool is ITownSquarePool {
     using SafeERC20 for IERC20;
 
     IERC20 public asset;
-    uint256 public apy; // in basis points (e.g., 1000 = 10%)
+    uint256 public highApy;  // APY when this pool is "hot" (basis points)
+    uint256 public lowApy;   // APY when this pool is "cold" (basis points)
+    uint256 public oscillateInterval; // seconds per phase
+    uint256 public deployedAt;
 
     mapping(address => uint256) public balances;
     uint256 public totalLiquidity_;
@@ -20,17 +25,28 @@ contract MockTownSquarePool is ITownSquarePool {
     event MockDeposit(address indexed user, uint256 amount);
     event MockWithdraw(address indexed user, uint256 amount);
 
-    constructor(address _asset, uint256 _initialApy) {
+    constructor(address _asset, uint256 _highApy, uint256 _lowApy, uint256 _interval) {
         asset = IERC20(_asset);
-        apy = _initialApy;
+        highApy = _highApy;
+        lowApy = _lowApy;
+        oscillateInterval = _interval;
+        deployedAt = block.timestamp;
+    }
+
+    /// @notice Override APY for testing
+    function setAPY(uint256 _newApy) external {
+        highApy = _newApy;
+        lowApy = _newApy;
     }
 
     /**
-     * @notice Set the APY for this pool
-     * @param _newApy New APY in basis points
+     * @notice Get current APY — oscillates OPPOSITE to Neverland
+     * @dev When phase is 0 (Neverland high), TownSquare returns lowApy and vice versa
      */
-    function setAPY(uint256 _newApy) external {
-        apy = _newApy;
+    function _currentApy() internal view returns (uint256) {
+        uint256 phase = ((block.timestamp - deployedAt) / oscillateInterval) % 2;
+        // Opposite phase: when Neverland is high (phase 0), TownSquare is low
+        return phase == 0 ? lowApy : highApy;
     }
 
     /**
@@ -67,11 +83,11 @@ contract MockTownSquarePool is ITownSquarePool {
     }
 
     /**
-     * @notice Get the current APY of the pool
+     * @notice Get the current APY of the pool — auto-oscillates
      * @return The APY in basis points
      */
     function getAPY() external view override returns (uint256) {
-        return apy;
+        return _currentApy();
     }
 
     /**

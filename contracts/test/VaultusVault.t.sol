@@ -27,8 +27,8 @@ contract VaultusVaultTest is Test {
     function setUp() public {
         // Deploy mock tokens and pools
         usdc = new MockUSDC();
-        neverlandPool = new MockNeverlandPool(address(usdc), 500); // 5% APY
-        townSquarePool = new MockTownSquarePool(address(usdc), 400); // 4% APY
+        neverlandPool = new MockNeverlandPool(address(usdc), 500, 500, 1); // 5% APY static
+        townSquarePool = new MockTownSquarePool(address(usdc), 400, 400, 1); // 4% APY static
 
         // Deploy vault
         vault = new VaultusVault(

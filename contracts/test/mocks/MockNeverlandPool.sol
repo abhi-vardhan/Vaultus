@@ -6,13 +6,17 @@ import {INeverlandPool} from "../../src/interfaces/INeverlandPool.sol";
 
 /**
  * @title MockNeverlandPool
- * @notice Mock implementation of Neverland Pool for testing
+ * @notice Mock Neverland Pool with auto-oscillating APY for demo
+ * @dev APY alternates every 10 seconds between highApy and lowApy
  */
 contract MockNeverlandPool is INeverlandPool {
     using SafeERC20 for IERC20;
 
     IERC20 public asset;
-    uint256 public apy; // in basis points (e.g., 500 = 5%)
+    uint256 public highApy;  // APY when this pool is "hot" (basis points)
+    uint256 public lowApy;   // APY when this pool is "cold" (basis points)
+    uint256 public oscillateInterval; // seconds per phase
+    uint256 public deployedAt;
 
     mapping(address => uint256) public balances;
     uint256 public totalSupplied;
@@ -20,33 +24,36 @@ contract MockNeverlandPool is INeverlandPool {
     event MockSupply(address indexed user, address indexed asset, uint256 amount);
     event MockWithdraw(address indexed user, address indexed asset, uint256 amount);
 
-    constructor(address _asset, uint256 _initialApy) {
+    constructor(address _asset, uint256 _highApy, uint256 _lowApy, uint256 _interval) {
         asset = IERC20(_asset);
-        apy = _initialApy;
+        highApy = _highApy;
+        lowApy = _lowApy;
+        oscillateInterval = _interval;
+        deployedAt = block.timestamp;
     }
 
-    /**
-     * @notice Set the APY for this pool
-     * @param _newApy New APY in basis points
-     */
+    /// @notice Override APY for testing
     function setAPY(uint256 _newApy) external {
-        apy = _newApy;
+        highApy = _newApy;
+        lowApy = _newApy;
     }
 
     /**
-     * @notice Get current APY
+     * @notice Get current APY — oscillates automatically based on time
      * @return Current APY in basis points
      */
-    function getAPY() external view returns (uint256) {
-        return apy;
+    function _currentApy() internal view returns (uint256) {
+        uint256 phase = ((block.timestamp - deployedAt) / oscillateInterval) % 2;
+        return phase == 0 ? highApy : lowApy;
     }
 
-    /**
-     * @notice Get APY for an asset (basis points)
-     */
+    function getAPY() external view returns (uint256) {
+        return _currentApy();
+    }
+
     function getAPY(address _asset) external view override returns (uint256) {
         require(_asset == address(asset), "Invalid asset");
-        return apy;
+        return _currentApy();
     }
 
     /**
@@ -143,10 +150,8 @@ contract MockNeverlandPool is INeverlandPool {
     {
         require(_asset == address(asset), "Invalid asset");
 
-        // Convert APY (in BPS) to ray rate (in 1e27)
-        // APY in BPS / 10000 / 365 days = daily rate
-        // For simplicity, approximate annual rate as apy / 10000 in ray
-        currentLiquidityRate = uint128((apy * 1e23) / 10000); // Simplified conversion
+        uint256 currentApy = _currentApy();
+        currentLiquidityRate = uint128((currentApy * 1e23) / 10000);
 
         liquidityIndex = 1e27;
         variableBorrowIndex = 1e27;
@@ -165,7 +170,7 @@ contract MockNeverlandPool is INeverlandPool {
      */
     function getCurrentLiquidityRate(address _asset) external view override returns (uint256) {
         require(_asset == address(asset), "Invalid asset");
-        return (apy * 1e23) / 10000;
+        return (_currentApy() * 1e23) / 10000;
     }
 
     /**
