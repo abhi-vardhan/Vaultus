@@ -37,19 +37,19 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
-        style={{ background: '#F7F5F2' }}
+        style={{ background: "#F7F5F2" }}
       >
         <Providers>
           {children}
-          <Toaster 
+          <Toaster
             position="bottom-right"
             toastOptions={{
               style: {
-                background: '#FFFFFF',
-                border: '3px solid #111111',
-                borderRadius: '0.75rem',
-                boxShadow: '4px 4px 0 0 rgba(0,0,0,0.9)',
-                fontFamily: 'Inter, sans-serif',
+                background: "#FFFFFF",
+                border: "3px solid #111111",
+                borderRadius: "0.75rem",
+                boxShadow: "4px 4px 0 0 rgba(0,0,0,0.9)",
+                fontFamily: "Inter, sans-serif",
               },
             }}
           />

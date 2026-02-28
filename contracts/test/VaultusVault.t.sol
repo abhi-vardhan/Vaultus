@@ -13,6 +13,9 @@ contract VaultusVaultTest is Test {
     MockNeverlandPool public neverlandPool;
     MockTownSquarePool public townSquarePool;
 
+    // Re-declare events for vm.expectEmit
+    event Rebalanced(uint256 apyNeverland, uint256 apyTownSquare, uint256 timestamp);
+
     address constant ALICE = address(0x1111);
     address constant BOB = address(0x2222);
     address constant CHARLIE = address(0x3333);
@@ -268,7 +271,7 @@ contract VaultusVaultTest is Test {
         vm.warp(block.timestamp + MIN_REBALANCE_INTERVAL + 1);
 
         vm.expectEmit(true, true, true, true);
-        emit VaultusVault.Rebalanced(500, 600, block.timestamp);
+        emit Rebalanced(500, 600, block.timestamp);
         vault.rebalance();
     }
 

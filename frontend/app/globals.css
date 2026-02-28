@@ -2,16 +2,16 @@
 
 :root {
   /* Neo-Brutalist Color Palette */
-  --nb-bg: #F7F5F2;
+  --nb-bg: #f7f5f2;
   --nb-ink: #111111;
-  --nb-accent: #6EE7B7;
-  --nb-accent-2: #60A5FA;
-  --nb-warn: #F59E0B;
-  --nb-error: #EF4444;
-  --nb-ok: #10B981;
-  --nb-card: #FFFFFF;
-  --nb-purple: #A855F7;
-  --nb-pink: #EC4899;
+  --nb-accent: #6ee7b7;
+  --nb-accent-2: #60a5fa;
+  --nb-warn: #f59e0b;
+  --nb-error: #ef4444;
+  --nb-ok: #10b981;
+  --nb-card: #ffffff;
+  --nb-purple: #a855f7;
+  --nb-pink: #ec4899;
 }
 
 @theme inline {
@@ -25,10 +25,10 @@
   --color-nb-card: var(--nb-card);
   --color-nb-purple: var(--nb-purple);
   --color-nb-pink: var(--nb-pink);
-  
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 * {
@@ -38,7 +38,7 @@
 body {
   background: var(--nb-bg);
   color: var(--nb-ink);
-  font-family: var(--font-body), 'Inter', system-ui, sans-serif;
+  font-family: var(--font-body), "Inter", system-ui, sans-serif;
 }
 
 /* Custom border-3 utility */
@@ -56,19 +56,27 @@ body {
 
 /* Font utilities */
 .font-display {
-  font-family: var(--font-display), 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-display), "Space Grotesk", system-ui, sans-serif;
 }
 
 .font-body {
-  font-family: var(--font-body), 'Inter', system-ui, sans-serif;
+  font-family: var(--font-body), "Inter", system-ui, sans-serif;
 }
 
 .font-mono {
-  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
 }
 
 /* Ensure all text is visible */
-h1, h2, h3, h4, h5, h6, p, span, label {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+label {
   color: inherit;
 }
 
@@ -77,22 +85,22 @@ h1, h2, h3, h4, h5, h6, p, span, label {
   background: var(--nb-card);
   border: 3px solid var(--nb-ink);
   border-radius: 1.25rem;
-  box-shadow: 8px 8px 0 0 rgba(0,0,0,0.9);
+  box-shadow: 8px 8px 0 0 rgba(0, 0, 0, 0.9);
   transition: all 0.2s ease;
   color: var(--nb-ink);
 }
 
 .nb-card:hover {
   transform: translateY(-4px);
-  box-shadow: 12px 12px 0 0 rgba(0,0,0,0.9);
+  box-shadow: 12px 12px 0 0 rgba(0, 0, 0, 0.9);
 }
 
 .nb-btn {
   background: var(--nb-accent);
   border: 3px solid var(--nb-ink);
   border-radius: 0.75rem;
-  box-shadow: 4px 4px 0 0 rgba(0,0,0,0.9);
-  font-family: var(--font-display), 'Space Grotesk', sans-serif;
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.9);
+  font-family: var(--font-display), "Space Grotesk", sans-serif;
   font-weight: 600;
   padding: 0.75rem 1.5rem;
   cursor: pointer;
@@ -102,17 +110,19 @@ h1, h2, h3, h4, h5, h6, p, span, label {
 
 .nb-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 6px 6px 0 0 rgba(0,0,0,0.9);
+  box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.9);
 }
 
 .nb-btn:active {
   transform: translateY(0);
-  box-shadow: 2px 2px 0 0 rgba(0,0,0,0.9);
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.9);
 }
 
 .nb-btn:focus {
   outline: none;
-  box-shadow: 0 0 0 4px rgba(110, 231, 183, 0.5), 4px 4px 0 0 rgba(0,0,0,0.9);
+  box-shadow:
+    0 0 0 4px rgba(110, 231, 183, 0.5),
+    4px 4px 0 0 rgba(0, 0, 0, 0.9);
 }
 
 .nb-btn-secondary {
@@ -135,19 +145,19 @@ h1, h2, h3, h4, h5, h6, p, span, label {
   border: 3px solid var(--nb-ink);
   border-radius: 0.75rem;
   padding: 0.75rem 1rem;
-  font-family: var(--font-body), 'Inter', sans-serif;
+  font-family: var(--font-body), "Inter", sans-serif;
   font-size: 1rem;
   transition: all 0.15s ease;
   color: var(--nb-ink);
 }
 
 .nb-input::placeholder {
-  color: #9CA3AF;
+  color: #9ca3af;
 }
 
 .nb-input:focus {
   outline: none;
-  box-shadow: 4px 4px 0 0 rgba(0,0,0,0.9);
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.9);
 }
 
 .nb-badge {
@@ -156,14 +166,14 @@ h1, h2, h3, h4, h5, h6, p, span, label {
   padding: 0.25rem 0.75rem;
   border: 2px solid var(--nb-ink);
   border-radius: 9999px;
-  font-family: var(--font-display), 'Space Grotesk', sans-serif;
+  font-family: var(--font-display), "Space Grotesk", sans-serif;
   font-weight: 600;
   font-size: 0.875rem;
   color: var(--nb-ink);
 }
 
 .nb-heading {
-  font-family: var(--font-display), 'Space Grotesk', sans-serif;
+  font-family: var(--font-display), "Space Grotesk", sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--nb-ink);
@@ -175,20 +185,20 @@ h1, h2, h3, h4, h5, h6, p, span, label {
 }
 
 .text-gray-500 {
-  color: #6B7280;
+  color: #6b7280;
 }
 
 .text-gray-600 {
-  color: #4B5563;
+  color: #4b5563;
 }
 
 .text-gray-400 {
-  color: #9CA3AF;
+  color: #9ca3af;
 }
 
 /* Background color utilities */
 .bg-gray-100 {
-  background-color: #F3F4F6;
+  background-color: #f3f4f6;
 }
 
 /* Explicit button text colors */
@@ -203,8 +213,13 @@ nav button {
 
 /* Animations */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(110, 231, 183, 0.4); }
-  50% { box-shadow: 0 0 20px 10px rgba(110, 231, 183, 0.2); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(110, 231, 183, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px 10px rgba(110, 231, 183, 0.2);
+  }
 }
 
 .pulse-glow {
@@ -212,8 +227,13 @@ nav button {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .float {

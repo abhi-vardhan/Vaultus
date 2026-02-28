@@ -14,3 +14,4 @@ remappings = [
 [rpc_endpoints]
 localhost = "http://localhost:8545"
 monad = "https://rpc.monad.xyz"
+monad-testnet = "https://testnet-rpc.monad.xyz"

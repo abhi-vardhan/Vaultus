@@ -1,12 +1,15 @@
-// Contract addresses and ABIs for Vaultus Vault on local Anvil
-// Update these addresses after deploying with: ./deploy-local.sh
+// Contract addresses and ABIs for Vaultus Vault on Monad Testnet (Chain ID 10143)
 
 export const ADDRESSES = {
-  // Update with deployed address after: forge script script/DeployVaultus.s.sol --rpc-url http://localhost:8545 --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 --broadcast
-  AUTOMATION_VAULT: "0x0000000000000000000000000000000000000000",
+  // VaultusVault deployed on Monad Testnet
+  AUTOMATION_VAULT: "0xe0C303877BC269e36ace4d5f3773ef715220319A",
 
-  // MockUSDC token address
-  USDC: "0x0000000000000000000000000000000000000000",
+  // MockUSDC on Monad Testnet
+  USDC: "0x04809A1cA87dAd18c4F734c9f357A17B71c0374B",
+
+  // Mock pool addresses on testnet
+  NEVERLAND_POOL: "0x1b7B5d0224C1407281b4FdCBa299665c1143423F",
+  TOWNSQUARE_USDC_POOL: "0x5756c9bB9C19BD9121E602E62c775FF93c356CC1",
 } as const;
 
 // VaultusVault Contract ABI

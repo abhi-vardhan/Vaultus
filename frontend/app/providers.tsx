@@ -5,37 +5,37 @@ import { WagmiProvider, createConfig, http } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// Define Anvil/Hardhat local network (chain ID 31337)
-const anvil = {
-  id: 31337,
-  name: "Anvil",
-  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+// Define Monad Testnet (Chain ID 10143)
+const monadTestnet = {
+  id: 10143,
+  name: "Monad Testnet",
+  nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
   rpcUrls: {
-    default: { http: ["http://127.0.0.1:8545"] },
+    default: { http: ["https://testnet-rpc.monad.xyz"] },
   },
   blockExplorers: {
-    default: { name: "Local", url: "http://127.0.0.1:8545" },
+    default: {
+      name: "Monad Explorer",
+      url: "https://testnet.monadexplorer.com",
+    },
   },
-  testnet: true,
 } as const;
 
-// Create wagmi config for local Anvil
+// Create wagmi config for Monad Testnet
 const config = createConfig({
-  chains: [anvil],
+  chains: [monadTestnet],
   connectors: [injected()],
   transports: {
-    [anvil.id]: http("http://127.0.0.1:8545"),
+    [monadTestnet.id]: http("https://testnet-rpc.monad.xyz"),
   },
 });
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
-  
+
   return (
     <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </WagmiProvider>
   );
 }
